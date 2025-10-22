@@ -1,0 +1,1896 @@
+<!doctype html>
+<html lang="id" class="h-full">
+ <head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>BUMDes CMMS Tagihan Internet</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+  <script src="/_sdk/data_sdk.js"></script>
+  <script src="/_sdk/element_sdk.js"></script>
+  <style>
+        body {
+            box-sizing: border-box;
+        }
+        .loading {
+            opacity: 0.6;
+            pointer-events: none;
+        }
+        .toast {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            z-index: 1000;
+            transition: all 0.3s ease;
+        }
+        @keyframes slideIn {
+            from { transform: translateX(100%); opacity: 0; }
+            to { transform: translateX(0); opacity: 1; }
+        }
+        .slide-in {
+            animation: slideIn 0.3s ease-out;
+        }
+        
+        /* Prevent layout shifts */
+        .module-content {
+            min-height: 400px;
+        }
+    </style>
+  <style>@view-transition { navigation: auto; }</style>
+ </head>
+ <body class="h-full bg-gradient-to-br from-blue-50 to-indigo-100">
+  <div class="min-h-full"><!-- Header -->
+   <header class="bg-white shadow-lg border-b-4 border-blue-600">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+     <div class="flex justify-between items-center py-6">
+      <div class="flex items-center">
+       <div class="flex-shrink-0">
+        <div class="w-12 h-12 bg-blue-600 rounded-lg flex items-center justify-center">
+         <svg class="w-8 h-8 text-white" fill="none" stroke="currentColor" viewbox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8.111 16.404a5.5 5.5 0 017.778 0M12 20h.01m-7.08-7.071c3.904-3.905 10.236-3.905 14.141 0M1.394 9.393c5.857-5.857 15.355-5.857 21.213 0"></path>
+         </svg>
+        </div>
+       </div>
+       <div class="ml-4">
+        <h1 id="app-title" class="text-2xl font-bold text-gray-900">BUMDes CMMS Tagihan Internet</h1>
+        <p id="company-name" class="text-sm text-gray-600">BUMDes CMMS Cikahuripan</p>
+       </div>
+      </div>
+      <div class="flex items-center space-x-4"><span id="contact-info" class="text-sm text-gray-600">📞 0812-3456-7890</span>
+       <div class="text-right">
+        <div class="text-sm text-gray-600">
+         Total Pelanggan
+        </div>
+        <div id="total-customers" class="text-xl font-bold text-blue-600">
+         0
+        </div>
+       </div>
+      </div>
+     </div>
+    </div>
+   </header><!-- Navigation -->
+   <nav class="bg-white shadow-sm border-b">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+     <div class="flex space-x-8"><button onclick="showModule('customers')" id="nav-customers" class="nav-btn py-4 px-1 border-b-2 border-blue-500 font-medium text-sm text-blue-600"> 👥 Daftar Pelanggan </button> <button onclick="showModule('billing')" id="nav-billing" class="nav-btn py-4 px-1 border-b-2 border-transparent font-medium text-sm text-gray-500 hover:text-gray-700 hover:border-gray-300"> 💰 Tagihan &amp; WA </button> <button onclick="showModule('payments')" id="nav-payments" class="nav-btn py-4 px-1 border-b-2 border-transparent font-medium text-sm text-gray-500 hover:text-gray-700 hover:border-gray-300"> 💳 Input Pembayaran </button> <button onclick="showModule('reports')" id="nav-reports" class="nav-btn py-4 px-1 border-b-2 border-transparent font-medium text-sm text-gray-500 hover:text-gray-700 hover:border-gray-300"> 📊 Laporan </button> <button onclick="showModule('payment-gateway')" id="nav-payment-gateway" class="nav-btn py-4 px-1 border-b-2 border-transparent font-medium text-sm text-gray-500 hover:text-gray-700 hover:border-gray-300"> 💳 Payment Gateway </button>
+     </div>
+    </div>
+   </nav><!-- Main Content -->
+   <main class="max-w-7xl mx-auto py-6 sm:px-6 lg:px-8"><!-- Module: Daftar Pelanggan -->
+    <div id="module-customers" class="module-content">
+     <div class="px-4 py-6 sm:px-0">
+      <div class="bg-white overflow-hidden shadow-xl rounded-lg">
+       <div class="px-6 py-4 border-b border-gray-200">
+        <div class="flex justify-between items-center">
+         <h2 class="text-xl font-semibold text-gray-900">Daftar Pelanggan</h2>
+         <div class="flex space-x-3"><button onclick="showImportForm()" class="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg font-medium transition-colors"> 📊 Import Excel </button> <button onclick="showAddCustomerForm()" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg font-medium transition-colors"> ➕ Tambah Pelanggan </button>
+         </div>
+        </div>
+       </div><!-- Import Excel Form -->
+       <div id="import-excel-form" class="hidden px-6 py-4 bg-green-50 border-b">
+        <div class="mb-4">
+         <h3 class="text-lg font-semibold text-green-900 mb-2">📊 Import Data Pelanggan dari Excel</h3>
+         <p class="text-sm text-green-700 mb-4">Upload file Excel (.xlsx, .xls) dengan format kolom: Nama, Alamat, No HP, Paket, Harga</p>
+        </div>
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6"><!-- Upload Section -->
+         <div>
+          <div class="mb-4"><label for="excel-file" class="block text-sm font-medium text-green-700 mb-2">Pilih File Excel</label> <input type="file" id="excel-file" accept=".xlsx,.xls" class="w-full px-3 py-2 border border-green-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500 bg-white">
+          </div>
+          <div class="flex space-x-3"><button onclick="processExcelFile()" id="import-btn" class="bg-green-600 hover:bg-green-700 text-white px-6 py-2 rounded-lg font-medium transition-colors"> 📤 Import Data </button> <button onclick="downloadTemplate()" class="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-lg font-medium transition-colors"> 📥 Download Template </button> <button type="button" onclick="hideImportForm()" class="bg-gray-500 hover:bg-gray-600 text-white px-6 py-2 rounded-lg font-medium transition-colors"> ❌ Batal </button>
+          </div>
+         </div><!-- Format Guide -->
+         <div class="bg-white p-4 rounded-lg border border-green-200">
+          <h4 class="font-semibold text-green-900 mb-3">📋 Format Excel yang Diperlukan:</h4>
+          <div class="overflow-x-auto">
+           <table class="min-w-full text-xs">
+            <thead class="bg-green-100">
+             <tr>
+              <th class="px-2 py-1 text-left font-medium text-green-900">Nama</th>
+              <th class="px-2 py-1 text-left font-medium text-green-900">Alamat</th>
+              <th class="px-2 py-1 text-left font-medium text-green-900">No HP</th>
+              <th class="px-2 py-1 text-left font-medium text-green-900">Paket</th>
+              <th class="px-2 py-1 text-left font-medium text-green-900">Harga</th>
+             </tr>
+            </thead>
+            <tbody class="text-green-700">
+             <tr class="border-t border-green-200">
+              <td class="px-2 py-1">Budi Santoso</td>
+              <td class="px-2 py-1">Jl. Merdeka No.1</td>
+              <td class="px-2 py-1">08123456789</td>
+              <td class="px-2 py-1">Paket Basic 10 Mbps</td>
+              <td class="px-2 py-1">150000</td>
+             </tr>
+             <tr class="border-t border-green-200">
+              <td class="px-2 py-1">Siti Aminah</td>
+              <td class="px-2 py-1">Jl. Sudirman No.5</td>
+              <td class="px-2 py-1">08987654321</td>
+              <td class="px-2 py-1">Paket Premium 50 Mbps</td>
+              <td class="px-2 py-1">300000</td>
+             </tr>
+            </tbody>
+           </table>
+          </div>
+          <div class="mt-3 text-xs text-green-600">
+           <p><strong>Catatan:</strong></p>
+           <ul class="list-disc list-inside space-y-1">
+            <li>Pastikan kolom sesuai urutan di atas</li>
+            <li>Harga dalam format angka (tanpa Rp atau titik)</li>
+            <li>No HP dalam format 08xxxxxxxxx</li>
+            <li>Baris pertama adalah header kolom</li>
+           </ul>
+          </div>
+         </div>
+        </div><!-- Import Results -->
+        <div id="import-results" class="hidden mt-4 p-4 bg-white rounded-lg border border-green-200">
+         <h4 class="font-semibold text-green-900 mb-2">📊 Hasil Import:</h4>
+         <div id="import-summary" class="text-sm text-green-700"></div>
+        </div>
+       </div><!-- Add Customer Form -->
+       <div id="add-customer-form" class="hidden px-6 py-4 bg-gray-50 border-b">
+        <form id="customer-form" class="grid grid-cols-1 md:grid-cols-2 gap-4">
+         <div><label for="nama" class="block text-sm font-medium text-gray-700 mb-1">Nama Pelanggan</label> <input type="text" id="nama" name="nama" required class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+         </div>
+         <div><label for="no_hp" class="block text-sm font-medium text-gray-700 mb-1">No. HP (WhatsApp)</label> <input type="tel" id="no_hp" name="no_hp" required placeholder="08123456789" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+         </div>
+         <div class="md:col-span-2"><label for="alamat" class="block text-sm font-medium text-gray-700 mb-1">Alamat</label> <textarea id="alamat" name="alamat" required rows="2" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"></textarea>
+         </div>
+         <div><label for="paket" class="block text-sm font-medium text-gray-700 mb-1">Paket Internet</label> <select id="paket" name="paket" required class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"> <option value="">Pilih Paket</option> <option value="Paket Basic 10 Mbps">Paket Basic 10 Mbps</option> <option value="Paket Standard 20 Mbps">Paket Standard 20 Mbps</option> <option value="Paket Premium 50 Mbps">Paket Premium 50 Mbps</option> <option value="Paket Ultra 100 Mbps">Paket Ultra 100 Mbps</option> </select>
+         </div>
+         <div><label for="harga" class="block text-sm font-medium text-gray-700 mb-1">Harga Bulanan (Rp)</label> <input type="number" id="harga" name="harga" required min="0" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+         </div>
+         <div class="md:col-span-2 flex space-x-3"><button type="submit" id="save-customer-btn" class="bg-green-600 hover:bg-green-700 text-white px-6 py-2 rounded-lg font-medium transition-colors"> 💾 Simpan </button> <button type="button" onclick="hideAddCustomerForm()" class="bg-gray-500 hover:bg-gray-600 text-white px-6 py-2 rounded-lg font-medium transition-colors"> ❌ Batal </button>
+         </div>
+        </form>
+       </div><!-- Customer List -->
+       <div class="px-6 py-4">
+        <div id="customers-list" class="space-y-4">
+         <div class="text-center py-8 text-gray-500">
+          <div class="text-4xl mb-2">
+           👥
+          </div>
+          <p>Belum ada pelanggan. Klik "Tambah Pelanggan" untuk memulai.</p>
+         </div>
+        </div>
+       </div>
+      </div>
+     </div>
+    </div><!-- Module: Tagihan & WA -->
+    <div id="module-billing" class="module-content hidden">
+     <div class="px-4 py-6 sm:px-0">
+      <div class="bg-white overflow-hidden shadow-xl rounded-lg">
+       <div class="px-6 py-4 border-b border-gray-200">
+        <h2 class="text-xl font-semibold text-gray-900">Tagihan &amp; Kirim WhatsApp</h2>
+        <p class="text-sm text-gray-600 mt-1">Generate tagihan bulanan dan kirim notifikasi via WhatsApp</p>
+       </div>
+       <div class="px-6 py-4">
+        <div class="mb-6">
+         <div class="flex items-center space-x-4 mb-4">
+          <div><label for="billing-month" class="block text-sm font-medium text-gray-700 mb-1">Bulan Tagihan</label> <input type="month" id="billing-month" class="px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+          </div>
+          <div class="pt-6"><button onclick="generateBilling()" id="generate-billing-btn" class="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-lg font-medium transition-colors"> 📋 Generate Tagihan </button>
+          </div>
+         </div>
+        </div>
+        <div id="billing-list" class="space-y-4">
+         <div class="text-center py-8 text-gray-500">
+          <div class="text-4xl mb-2">
+           💰
+          </div>
+          <p>Pilih bulan dan klik "Generate Tagihan" untuk membuat tagihan bulanan.</p>
+         </div>
+        </div>
+       </div>
+      </div>
+     </div>
+    </div><!-- Module: Input Pembayaran -->
+    <div id="module-payments" class="module-content hidden">
+     <div class="px-4 py-6 sm:px-0">
+      <div class="bg-white overflow-hidden shadow-xl rounded-lg">
+       <div class="px-6 py-4 border-b border-gray-200">
+        <h2 class="text-xl font-semibold text-gray-900">Input Pembayaran</h2>
+        <p class="text-sm text-gray-600 mt-1">Catat pembayaran pelanggan dan aktifkan jaringan otomatis</p>
+       </div>
+       <div class="px-6 py-4">
+        <div id="unpaid-bills" class="space-y-4">
+         <div class="text-center py-8 text-gray-500">
+          <div class="text-4xl mb-2">
+           💳
+          </div>
+          <p>Belum ada tagihan yang belum dibayar.</p>
+         </div>
+        </div>
+       </div>
+      </div>
+     </div>
+    </div><!-- Module: Laporan -->
+    <div id="module-reports" class="module-content hidden">
+     <div class="px-4 py-6 sm:px-0">
+      <div class="bg-white overflow-hidden shadow-xl rounded-lg">
+       <div class="px-6 py-4 border-b border-gray-200">
+        <h2 class="text-xl font-semibold text-gray-900">Laporan</h2>
+        <p class="text-sm text-gray-600 mt-1">Ringkasan pendapatan dan status pelanggan</p>
+       </div>
+       <div class="px-6 py-4">
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
+         <div class="bg-green-50 p-6 rounded-lg border border-green-200">
+          <div class="flex items-center">
+           <div class="text-3xl text-green-600 mr-4">
+            💰
+           </div>
+           <div>
+            <p class="text-sm font-medium text-green-600">Total Pendapatan</p>
+            <p id="total-revenue" class="text-2xl font-bold text-green-700">Rp 0</p>
+           </div>
+          </div>
+         </div>
+         <div class="bg-blue-50 p-6 rounded-lg border border-blue-200">
+          <div class="flex items-center">
+           <div class="text-3xl text-blue-600 mr-4">
+            ✅
+           </div>
+           <div>
+            <p class="text-sm font-medium text-blue-600">Pelanggan Aktif</p>
+            <p id="active-customers" class="text-2xl font-bold text-blue-700">0</p>
+           </div>
+          </div>
+         </div>
+         <div class="bg-red-50 p-6 rounded-lg border border-red-200">
+          <div class="flex items-center">
+           <div class="text-3xl text-red-600 mr-4">
+            ⚠️
+           </div>
+           <div>
+            <p class="text-sm font-medium text-red-600">Jaringan Off</p>
+            <p id="inactive-customers" class="text-2xl font-bold text-red-700">0</p>
+           </div>
+          </div>
+         </div>
+        </div>
+        <div id="reports-detail" class="space-y-4">
+         <h3 class="text-lg font-semibold text-gray-900 mb-4">Detail Laporan Bulanan</h3>
+         <div id="payment-history" class="space-y-4">
+          <div class="text-center py-8 text-gray-500">
+           <div class="text-4xl mb-2">
+            📊
+           </div>
+           <p>Data laporan akan muncul setelah ada transaksi pembayaran.</p>
+          </div>
+         </div>
+        </div>
+       </div>
+      </div>
+     </div>
+    </div><!-- Module: Payment Gateway -->
+    <div id="module-payment-gateway" class="module-content hidden">
+     <div class="px-4 py-6 sm:px-0">
+      <div class="bg-white overflow-hidden shadow-xl rounded-lg">
+       <div class="px-6 py-4 border-b border-gray-200">
+        <h2 class="text-xl font-semibold text-gray-900">Payment Gateway</h2>
+        <p class="text-sm text-gray-600 mt-1">Informasi metode pembayaran untuk pelanggan</p>
+       </div>
+       <div class="px-6 py-4">
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-6"><!-- Tunai di Kantor -->
+         <div class="bg-blue-50 p-6 rounded-lg border border-blue-200">
+          <div class="text-center mb-4">
+           <div class="text-4xl mb-2">
+            🏢
+           </div>
+           <h3 class="text-lg font-semibold text-blue-900">Tunai di Kantor</h3>
+          </div>
+          <div class="space-y-3 text-sm">
+           <div class="flex items-start space-x-2"><span class="text-blue-600">📍</span>
+            <div>
+             <p class="font-medium text-blue-900">Alamat:</p>
+             <p id="payment-office-address" class="text-blue-700">Jl. Klapanunggal - Bojong, Kp. Palahlar RT. 019/008 Desa Cikahuripan Kec. Klapnunggal - Bogor</p>
+            </div>
+           </div>
+           <div class="flex items-center space-x-2"><span class="text-blue-600">📱</span>
+            <div>
+             <p class="font-medium text-blue-900">WhatsApp:</p>
+             <p id="payment-whatsapp" class="text-blue-700">082125415593</p>
+            </div>
+           </div>
+           <div class="flex items-center space-x-2"><span class="text-blue-600">🕒</span>
+            <div>
+             <p class="font-medium text-blue-900">Jam Operasional:</p>
+             <p class="text-blue-700">Senin - Jumat: 08:00 - 16:00</p>
+            </div>
+           </div>
+          </div><button onclick="contactOffice()" class="w-full mt-4 bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg font-medium transition-colors"> 📞 Hubungi Kantor </button>
+         </div><!-- Transfer Bank Mandiri -->
+         <div class="bg-yellow-50 p-6 rounded-lg border border-yellow-200">
+          <div class="text-center mb-4">
+           <div class="text-4xl mb-2">
+            🏦
+           </div>
+           <h3 class="text-lg font-semibold text-yellow-900">Bank Mandiri</h3>
+          </div>
+          <div class="space-y-3 text-sm">
+           <div class="flex items-center space-x-2"><span class="text-yellow-600">💳</span>
+            <div>
+             <p class="font-medium text-yellow-900">Nomor Rekening:</p>
+             <p id="payment-bank-mandiri" class="text-yellow-700 font-mono">Nomor rekening Bank Mandiri</p>
+            </div>
+           </div>
+           <div class="flex items-center space-x-2"><span class="text-yellow-600">👤</span>
+            <div>
+             <p class="font-medium text-yellow-900">Atas Nama:</p>
+             <p class="text-yellow-700">BUMDes CMMS Cikahuripan</p>
+            </div>
+           </div>
+           <div class="bg-yellow-100 p-3 rounded-md">
+            <p class="text-xs text-yellow-800"><strong>Catatan:</strong> Setelah transfer, mohon kirim bukti pembayaran via WhatsApp untuk konfirmasi.</p>
+           </div>
+          </div><button onclick="copyBankAccount()" class="w-full mt-4 bg-yellow-600 hover:bg-yellow-700 text-white px-4 py-2 rounded-lg font-medium transition-colors"> 📋 Salin Nomor Rekening </button>
+         </div><!-- DANA -->
+         <div class="bg-green-50 p-6 rounded-lg border border-green-200">
+          <div class="text-center mb-4">
+           <div class="text-4xl mb-2">
+            💰
+           </div>
+           <h3 class="text-lg font-semibold text-green-900">DANA</h3>
+          </div>
+          <div class="space-y-3 text-sm">
+           <div class="flex items-center space-x-2"><span class="text-green-600">📱</span>
+            <div>
+             <p class="font-medium text-green-900">Nomor DANA:</p>
+             <p id="payment-dana-number" class="text-green-700 font-mono">Nomor DANA BUMDES</p>
+            </div>
+           </div>
+           <div class="flex items-center space-x-2"><span class="text-green-600">👤</span>
+            <div>
+             <p class="font-medium text-green-900">Atas Nama:</p>
+             <p class="text-green-700">BUMDes CMMS Cikahuripan</p>
+            </div>
+           </div>
+           <div class="bg-green-100 p-3 rounded-md">
+            <p class="text-xs text-green-800"><strong>Catatan:</strong> Transfer via DANA tersedia 24/7. Konfirmasi pembayaran via WhatsApp setelah transfer.</p>
+           </div>
+          </div><button onclick="copyDanaNumber()" class="w-full mt-4 bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg font-medium transition-colors"> 📋 Salin Nomor DANA </button>
+         </div>
+        </div><!-- Panduan Pembayaran -->
+        <div class="mt-8 bg-gray-50 p-6 rounded-lg">
+         <h3 class="text-lg font-semibold text-gray-900 mb-4">📋 Panduan Pembayaran</h3>
+         <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div>
+           <h4 class="font-medium text-gray-900 mb-2">Untuk Pelanggan:</h4>
+           <ol class="list-decimal list-inside space-y-1 text-sm text-gray-700">
+            <li>Pilih metode pembayaran yang diinginkan</li>
+            <li>Lakukan pembayaran sesuai nominal tagihan</li>
+            <li>Simpan bukti pembayaran (struk/screenshot)</li>
+            <li>Kirim bukti via WhatsApp ke nomor yang tersedia</li>
+            <li>Tunggu konfirmasi dan aktivasi jaringan</li>
+           </ol>
+          </div>
+          <div>
+           <h4 class="font-medium text-gray-900 mb-2">Untuk Admin:</h4>
+           <ol class="list-decimal list-inside space-y-1 text-sm text-gray-700">
+            <li>Terima bukti pembayaran dari pelanggan</li>
+            <li>Verifikasi pembayaran di sistem/rekening</li>
+            <li>Buka menu "Input Pembayaran"</li>
+            <li>Klik "Tandai Lunas" untuk pelanggan yang sudah bayar</li>
+            <li>Jaringan akan otomatis aktif kembali</li>
+           </ol>
+          </div>
+         </div>
+        </div>
+       </div>
+      </div>
+     </div>
+    </div>
+   </main>
+  </div><!-- Toast Notification -->
+  <div id="toast" class="toast hidden"></div>
+  <script>
+        // Configuration
+        const defaultConfig = {
+            app_title: "BUMDes CMMS Tagihan Internet",
+            company_name: "BUMDes CMMS Cikahuripan",
+            contact_info: "0812-3456-7890",
+            office_address: "Jl. Klapanunggal - Bojong, Kp. Palahlar RT. 019/008 Desa Cikahuripan Kec. Klapnunggal - Bogor",
+            whatsapp_payment: "082125415593",
+            bank_mandiri: "Nomor rekening Bank Mandiri",
+            dana_number: "Nomor DANA BUMDES"
+        };
+
+        let currentData = [];
+        let currentModule = 'customers';
+        let isDataSdkReady = false;
+        let updateUITimeout = null;
+
+        // Element SDK Implementation
+        const element = {
+            defaultConfig,
+            render: async (config) => {
+                const appTitle = config.app_title || defaultConfig.app_title;
+                const companyName = config.company_name || defaultConfig.company_name;
+                const contactInfo = config.contact_info || defaultConfig.contact_info;
+
+                document.getElementById('app-title').textContent = appTitle;
+                document.getElementById('company-name').textContent = companyName;
+                document.getElementById('contact-info').textContent = `📞 ${contactInfo}`;
+                document.title = appTitle;
+            },
+            mapToCapabilities: () => ({
+                recolorables: [],
+                borderables: [],
+                fontEditable: undefined,
+                fontSizeable: undefined
+            }),
+            mapToEditPanelValues: (config) => new Map([
+                ["app_title", config.app_title || defaultConfig.app_title],
+                ["company_name", config.company_name || defaultConfig.company_name],
+                ["contact_info", config.contact_info || defaultConfig.contact_info],
+                ["office_address", config.office_address || defaultConfig.office_address],
+                ["whatsapp_payment", config.whatsapp_payment || defaultConfig.whatsapp_payment],
+                ["bank_mandiri", config.bank_mandiri || defaultConfig.bank_mandiri],
+                ["dana_number", config.dana_number || defaultConfig.dana_number]
+            ])
+        };
+
+        // Data SDK Handler
+        const dataHandler = {
+            onDataChanged(data) {
+                // Prevent unnecessary updates if data hasn't actually changed
+                if (JSON.stringify(currentData) === JSON.stringify(data)) {
+                    return;
+                }
+                
+                currentData = data;
+                
+                // Debounce UI updates to prevent excessive re-renders
+                if (updateUITimeout) {
+                    clearTimeout(updateUITimeout);
+                }
+                
+                updateUITimeout = setTimeout(() => {
+                    updateUI();
+                }, 100);
+            }
+        };
+
+        // Initialize SDKs
+        async function initializeApp() {
+            try {
+                if (window.elementSdk) {
+                    await window.elementSdk.init(element);
+                }
+                
+                if (window.dataSdk) {
+                    const result = await window.dataSdk.init(dataHandler);
+                    if (!result.isOk) {
+                        showToast('Gagal menginisialisasi database', 'error');
+                        console.error('Data SDK initialization failed:', result.error);
+                    } else {
+                        isDataSdkReady = true;
+                        console.log('Data SDK berhasil diinisialisasi');
+                    }
+                } else {
+                    console.error('Data SDK tidak tersedia');
+                    showToast('Sistem database tidak tersedia. Silakan refresh halaman.', 'error');
+                }
+            } catch (error) {
+                console.error('Initialization error:', error);
+                showToast('Error saat inisialisasi: ' + error.message, 'error');
+            }
+        }
+
+        // Utility Functions
+        function showToast(message, type = 'success') {
+            const toast = document.getElementById('toast');
+            const bgColor = type === 'success' ? 'bg-green-500' : 'bg-red-500';
+            
+            toast.innerHTML = `
+                <div class="${bgColor} text-white px-6 py-3 rounded-lg shadow-lg slide-in">
+                    ${message}
+                </div>
+            `;
+            toast.classList.remove('hidden');
+            
+            setTimeout(() => {
+                toast.classList.add('hidden');
+            }, 3000);
+        }
+
+        function formatCurrency(amount) {
+            return new Intl.NumberFormat('id-ID', {
+                style: 'currency',
+                currency: 'IDR',
+                minimumFractionDigits: 0
+            }).format(amount);
+        }
+
+        function formatDate(dateString) {
+            return new Date(dateString).toLocaleDateString('id-ID', {
+                year: 'numeric',
+                month: 'long',
+                day: 'numeric'
+            });
+        }
+
+        function generateId() {
+            return Date.now().toString() + Math.random().toString(36).substr(2, 9);
+        }
+
+        // Navigation
+        function showModule(moduleName) {
+            // Prevent unnecessary updates if already on the same module
+            if (currentModule === moduleName) return;
+            
+            currentModule = moduleName;
+            
+            // Hide all modules
+            document.querySelectorAll('.module-content').forEach(module => {
+                module.classList.add('hidden');
+            });
+            
+            // Show selected module
+            document.getElementById(`module-${moduleName}`).classList.remove('hidden');
+            
+            // Update navigation
+            document.querySelectorAll('.nav-btn').forEach(btn => {
+                btn.classList.remove('border-blue-500', 'text-blue-600');
+                btn.classList.add('border-transparent', 'text-gray-500');
+            });
+            
+            document.getElementById(`nav-${moduleName}`).classList.remove('border-transparent', 'text-gray-500');
+            document.getElementById(`nav-${moduleName}`).classList.add('border-blue-500', 'text-blue-600');
+            
+            // Only update UI for the current module
+            updateUI();
+        }
+
+        // Customer Management
+        function showAddCustomerForm() {
+            hideImportForm();
+            document.getElementById('add-customer-form').classList.remove('hidden');
+        }
+
+        function hideAddCustomerForm() {
+            document.getElementById('add-customer-form').classList.add('hidden');
+            document.getElementById('customer-form').reset();
+        }
+
+        function showImportForm() {
+            hideAddCustomerForm();
+            document.getElementById('import-excel-form').classList.remove('hidden');
+        }
+
+        function hideImportForm() {
+            document.getElementById('import-excel-form').classList.add('hidden');
+            document.getElementById('excel-file').value = '';
+            document.getElementById('import-results').classList.add('hidden');
+        }
+
+        // Excel Import Functions
+        function downloadTemplate() {
+            try {
+                const templateData = [
+                    ['Nama', 'Alamat', 'No HP', 'Paket', 'Harga'],
+                    ['Budi Santoso', 'Jl. Merdeka No.1', '08123456789', 'Paket Basic 10 Mbps', 150000],
+                    ['Siti Aminah', 'Jl. Sudirman No.5', '08987654321', 'Paket Premium 50 Mbps', 300000],
+                    ['Ahmad Rahman', 'Jl. Gatot Subroto No.10', '08111222333', 'Paket Standard 20 Mbps', 200000]
+                ];
+
+                // Create worksheet
+                const ws = XLSX.utils.aoa_to_sheet(templateData);
+                
+                // Set column widths
+                ws['!cols'] = [
+                    { width: 20 }, // Nama
+                    { width: 30 }, // Alamat
+                    { width: 15 }, // No HP
+                    { width: 25 }, // Paket
+                    { width: 12 }  // Harga
+                ];
+
+                // Create workbook
+                const wb = XLSX.utils.book_new();
+                XLSX.utils.book_append_sheet(wb, ws, 'Template Pelanggan');
+                
+                // Generate file and download
+                const wbout = XLSX.write(wb, { bookType: 'xlsx', type: 'array' });
+                const blob = new Blob([wbout], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+                
+                // Create download link
+                const url = window.URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = 'Template_Data_Pelanggan_BUMDes.xlsx';
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+                window.URL.revokeObjectURL(url);
+                
+                showToast('Template Excel berhasil didownload!');
+            } catch (error) {
+                console.error('Error downloading template:', error);
+                showToast('Gagal mendownload template: ' + error.message, 'error');
+            }
+        }
+
+        async function processExcelFile() {
+            const fileInput = document.getElementById('excel-file');
+            const file = fileInput.files[0];
+
+            if (!file) {
+                showToast('Pilih file Excel terlebih dahulu', 'error');
+                return;
+            }
+
+            // Check if Data SDK is initialized
+            if (!isDataSdkReady || !window.dataSdk) {
+                showToast('Sistem database belum siap. Silakan tunggu beberapa detik dan coba lagi.', 'error');
+                return;
+            }
+
+            if (currentData.length >= 999) {
+                showToast('Maksimal 999 pelanggan telah tercapai. Hapus beberapa pelanggan terlebih dahulu.', 'error');
+                return;
+            }
+
+            const btn = document.getElementById('import-btn');
+            btn.classList.add('loading');
+            btn.textContent = '⏳ Memproses...';
+
+            try {
+                const data = await readExcelFile(file);
+                const result = await importCustomersFromExcel(data);
+                
+                // Show results
+                document.getElementById('import-results').classList.remove('hidden');
+                document.getElementById('import-summary').innerHTML = `
+                    <div class="space-y-2">
+                        <div class="flex items-center space-x-2">
+                            <span class="text-green-600">✅</span>
+                            <span>Berhasil diimport: <strong>${result.success}</strong> pelanggan</span>
+                        </div>
+                        ${result.errors.length > 0 ? `
+                            <div class="flex items-start space-x-2">
+                                <span class="text-red-600">❌</span>
+                                <div>
+                                    <span>Gagal diimport: <strong>${result.errors.length}</strong> baris</span>
+                                    <ul class="list-disc list-inside mt-1 text-xs text-red-600">
+                                        ${result.errors.map(error => `<li>Baris ${error.row}: ${error.message}</li>`).join('')}
+                                    </ul>
+                                </div>
+                            </div>
+                        ` : ''}
+                        <div class="mt-3 text-xs text-gray-600">
+                            Total pelanggan sekarang: <strong>${currentData.filter(c => c.nama).length}</strong>
+                        </div>
+                    </div>
+                `;
+
+                if (result.success > 0) {
+                    showToast(`Berhasil mengimport ${result.success} pelanggan!`);
+                    fileInput.value = '';
+                } else if (result.errors.length > 0) {
+                    showToast('Import selesai dengan beberapa error. Periksa detail di bawah.', 'error');
+                }
+
+            } catch (error) {
+                console.error('Excel processing error:', error);
+                showToast('Gagal memproses file Excel: ' + error.message, 'error');
+                
+                // Show error details
+                document.getElementById('import-results').classList.remove('hidden');
+                document.getElementById('import-summary').innerHTML = `
+                    <div class="text-red-600">
+                        <div class="flex items-center space-x-2 mb-2">
+                            <span>❌</span>
+                            <span><strong>Error:</strong> ${error.message}</span>
+                        </div>
+                        <div class="text-xs">
+                            <p><strong>Kemungkinan penyebab:</strong></p>
+                            <ul class="list-disc list-inside mt-1">
+                                <li>Sistem database belum siap (tunggu beberapa detik dan coba lagi)</li>
+                                <li>Format file Excel tidak sesuai</li>
+                                <li>File Excel rusak atau kosong</li>
+                                <li>Koneksi internet bermasalah</li>
+                            </ul>
+                        </div>
+                    </div>
+                `;
+            }
+
+            btn.classList.remove('loading');
+            btn.textContent = '📤 Import Data';
+        }
+
+        function readExcelFile(file) {
+            return new Promise((resolve, reject) => {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    try {
+                        const data = new Uint8Array(e.target.result);
+                        const workbook = XLSX.read(data, { type: 'array' });
+                        const firstSheetName = workbook.SheetNames[0];
+                        const worksheet = workbook.Sheets[firstSheetName];
+                        const jsonData = XLSX.utils.sheet_to_json(worksheet, { header: 1 });
+                        resolve(jsonData);
+                    } catch (error) {
+                        reject(error);
+                    }
+                };
+                reader.onerror = function() {
+                    reject(new Error('Gagal membaca file'));
+                };
+                reader.readAsArrayBuffer(file);
+            });
+        }
+
+        async function importCustomersFromExcel(data) {
+            const result = { success: 0, errors: [] };
+            
+            if (data.length < 2) {
+                throw new Error('File Excel kosong atau tidak memiliki data');
+            }
+
+            // Check if Data SDK is available
+            if (!window.dataSdk || !isDataSdkReady) {
+                throw new Error('Sistem database belum siap. Silakan tunggu beberapa detik dan coba lagi.');
+            }
+
+            // Skip header row (index 0)
+            for (let i = 1; i < data.length; i++) {
+                const row = data[i];
+                const rowNumber = i + 1;
+
+                // Skip empty rows
+                if (!row || row.length === 0 || !row[0]) {
+                    continue;
+                }
+
+                try {
+                    // Validate required fields
+                    if (!row[0] || !row[1] || !row[2] || !row[3] || !row[4]) {
+                        result.errors.push({
+                            row: rowNumber,
+                            message: 'Data tidak lengkap (ada kolom yang kosong)'
+                        });
+                        continue;
+                    }
+
+                    // Check if we're approaching the limit
+                    if (currentData.length + result.success >= 999) {
+                        result.errors.push({
+                            row: rowNumber,
+                            message: 'Mencapai batas maksimal 999 pelanggan'
+                        });
+                        break;
+                    }
+
+                    const customerData = {
+                        id: generateId(),
+                        nama: String(row[0]).trim(),
+                        alamat: String(row[1]).trim(),
+                        no_hp: String(row[2]).trim(),
+                        paket: String(row[3]).trim(),
+                        harga: parseInt(row[4]) || 0,
+                        tanggal_tagihan: '',
+                        status_bayar: 'belum_bayar',
+                        status_jaringan: 'aktif',
+                        tanggal_bayar: '',
+                        bulan_tagihan: '',
+                        created_at: new Date().toISOString()
+                    };
+
+                    // Validate phone number format
+                    if (!/^08\d{8,12}$/.test(customerData.no_hp)) {
+                        result.errors.push({
+                            row: rowNumber,
+                            message: 'Format No HP tidak valid (harus dimulai dengan 08)'
+                        });
+                        continue;
+                    }
+
+                    // Validate price
+                    if (customerData.harga <= 0) {
+                        result.errors.push({
+                            row: rowNumber,
+                            message: 'Harga harus berupa angka positif'
+                        });
+                        continue;
+                    }
+
+                    // Check for duplicate phone numbers
+                    const existingCustomer = currentData.find(c => c.no_hp === customerData.no_hp);
+                    if (existingCustomer) {
+                        result.errors.push({
+                            row: rowNumber,
+                            message: `No HP ${customerData.no_hp} sudah terdaftar`
+                        });
+                        continue;
+                    }
+
+                    // Double-check SDK availability before each create operation
+                    if (!window.dataSdk || typeof window.dataSdk.create !== 'function') {
+                        result.errors.push({
+                            row: rowNumber,
+                            message: 'Sistem database tidak tersedia'
+                        });
+                        continue;
+                    }
+
+                    const createResult = await window.dataSdk.create(customerData);
+                    if (createResult.isOk) {
+                        result.success++;
+                    } else {
+                        result.errors.push({
+                            row: rowNumber,
+                            message: 'Gagal menyimpan ke database: ' + (createResult.error?.message || 'Unknown error')
+                        });
+                    }
+
+                } catch (error) {
+                    result.errors.push({
+                        row: rowNumber,
+                        message: 'Error: ' + error.message
+                    });
+                }
+            }
+
+            return result;
+        }
+
+        async function handleCustomerSubmit(event) {
+            event.preventDefault();
+            
+            if (!isDataSdkReady || !window.dataSdk) {
+                showToast('Sistem database belum siap. Silakan tunggu beberapa detik dan coba lagi.', 'error');
+                return;
+            }
+            
+            if (currentData.length >= 999) {
+                showToast('Maksimal 999 pelanggan telah tercapai. Hapus beberapa pelanggan terlebih dahulu.', 'error');
+                return;
+            }
+
+            const btn = document.getElementById('save-customer-btn');
+            btn.classList.add('loading');
+            btn.textContent = '⏳ Menyimpan...';
+
+            const formData = new FormData(event.target);
+            const customerData = {
+                id: generateId(),
+                nama: formData.get('nama'),
+                alamat: formData.get('alamat'),
+                no_hp: formData.get('no_hp'),
+                paket: formData.get('paket'),
+                harga: parseInt(formData.get('harga')),
+                tanggal_tagihan: '',
+                status_bayar: 'belum_bayar',
+                status_jaringan: 'aktif',
+                tanggal_bayar: '',
+                bulan_tagihan: '',
+                created_at: new Date().toISOString()
+            };
+
+            const result = await window.dataSdk.create(customerData);
+            
+            btn.classList.remove('loading');
+            btn.textContent = '💾 Simpan';
+
+            if (result.isOk) {
+                showToast('Pelanggan berhasil ditambahkan!');
+                hideAddCustomerForm();
+            } else {
+                showToast('Gagal menambahkan pelanggan', 'error');
+            }
+        }
+
+        function editCustomer(customerId) {
+            const customer = currentData.find(c => c.id === customerId);
+            if (!customer) return;
+
+            const modal = document.createElement('div');
+            modal.id = 'edit-customer-modal';
+            modal.className = 'fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50';
+            modal.innerHTML = `
+                <div class="bg-white rounded-lg p-6 w-full max-w-2xl mx-4 max-h-[90vh] overflow-y-auto">
+                    <div class="flex justify-between items-center mb-4">
+                        <h3 class="text-lg font-semibold text-gray-900">✏️ Edit Data Pelanggan</h3>
+                        <button onclick="closeEditCustomerModal()" class="text-gray-400 hover:text-gray-600">
+                            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                            </svg>
+                        </button>
+                    </div>
+                    
+                    <form id="edit-customer-form" class="space-y-4">
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-1">Nama Pelanggan</label>
+                                <input type="text" id="edit-nama" name="nama" value="${customer.nama}" required class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-1">No. HP (WhatsApp)</label>
+                                <input type="tel" id="edit-no_hp" name="no_hp" value="${customer.no_hp}" required placeholder="08123456789" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+                            </div>
+                        </div>
+                        
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Alamat</label>
+                            <textarea id="edit-alamat" name="alamat" required rows="2" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">${customer.alamat}</textarea>
+                        </div>
+                        
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-1">Paket Internet</label>
+                                <select id="edit-paket" name="paket" required class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+                                    <option value="">Pilih Paket</option>
+                                    <option value="Paket Basic 10 Mbps" ${customer.paket === 'Paket Basic 10 Mbps' ? 'selected' : ''}>Paket Basic 10 Mbps</option>
+                                    <option value="Paket Standard 20 Mbps" ${customer.paket === 'Paket Standard 20 Mbps' ? 'selected' : ''}>Paket Standard 20 Mbps</option>
+                                    <option value="Paket Premium 50 Mbps" ${customer.paket === 'Paket Premium 50 Mbps' ? 'selected' : ''}>Paket Premium 50 Mbps</option>
+                                    <option value="Paket Ultra 100 Mbps" ${customer.paket === 'Paket Ultra 100 Mbps' ? 'selected' : ''}>Paket Ultra 100 Mbps</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-1">Harga Bulanan (Rp)</label>
+                                <input type="number" id="edit-harga" name="harga" value="${customer.harga}" required min="0" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+                            </div>
+                        </div>
+
+                        ${customer.paket !== document.getElementById('edit-paket')?.value || customer.harga !== parseInt(document.getElementById('edit-harga')?.value) ? `
+                            <div class="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
+                                <div class="flex items-start space-x-2">
+                                    <div class="text-yellow-600 text-lg">⚠️</div>
+                                    <div class="text-sm">
+                                        <p class="font-medium text-yellow-800 mb-1">Perhatian: Perubahan Paket/Harga</p>
+                                        <p class="text-yellow-700">Jika Anda mengubah paket atau harga, pastikan untuk:</p>
+                                        <ul class="list-disc list-inside mt-1 text-yellow-700 space-y-1">
+                                            <li>Menginformasikan pelanggan tentang perubahan</li>
+                                            <li>Menyesuaikan tagihan bulan berikutnya</li>
+                                            <li>Mengupdate konfigurasi jaringan jika diperlukan</li>
+                                        </ul>
+                                    </div>
+                                </div>
+                            </div>
+                        ` : ''}
+
+                        <div class="flex space-x-3 pt-4">
+                            <button type="submit" id="update-customer-btn" class="flex-1 bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg font-medium transition-colors">
+                                💾 Update Data
+                            </button>
+                            <button type="button" onclick="closeEditCustomerModal()" class="px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors">
+                                Batal
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            `;
+
+            document.body.appendChild(modal);
+
+            // Handle form submission
+            document.getElementById('edit-customer-form').addEventListener('submit', async (e) => {
+                e.preventDefault();
+                await handleEditCustomerSubmit(customerId, e);
+            });
+
+            // Add real-time warning for package/price changes
+            const paketSelect = document.getElementById('edit-paket');
+            const hargaInput = document.getElementById('edit-harga');
+            
+            function updateWarning() {
+                const currentPaket = paketSelect.value;
+                const currentHarga = parseInt(hargaInput.value) || 0;
+                const hasChanges = currentPaket !== customer.paket || currentHarga !== customer.harga;
+                
+                const existingWarning = modal.querySelector('.package-change-warning');
+                if (existingWarning) {
+                    existingWarning.remove();
+                }
+                
+                if (hasChanges) {
+                    const warning = document.createElement('div');
+                    warning.className = 'package-change-warning bg-yellow-50 border border-yellow-200 rounded-lg p-4 mt-4';
+                    warning.innerHTML = `
+                        <div class="flex items-start space-x-2">
+                            <div class="text-yellow-600 text-lg">⚠️</div>
+                            <div class="text-sm">
+                                <p class="font-medium text-yellow-800 mb-1">Perubahan Terdeteksi</p>
+                                <div class="text-yellow-700 space-y-1">
+                                    ${currentPaket !== customer.paket ? `<div>📡 Paket: <span class="font-medium">${customer.paket}</span> → <span class="font-medium">${currentPaket}</span></div>` : ''}
+                                    ${currentHarga !== customer.harga ? `<div>💰 Harga: <span class="font-medium">${formatCurrency(customer.harga)}</span> → <span class="font-medium">${formatCurrency(currentHarga)}</span></div>` : ''}
+                                </div>
+                                <p class="text-yellow-700 mt-2 text-xs">Pastikan untuk menginformasikan pelanggan tentang perubahan ini.</p>
+                            </div>
+                        </div>
+                    `;
+                    
+                    const form = document.getElementById('edit-customer-form');
+                    const submitButton = form.querySelector('#update-customer-btn');
+                    form.insertBefore(warning, submitButton.parentElement);
+                }
+            }
+            
+            paketSelect.addEventListener('change', updateWarning);
+            hargaInput.addEventListener('input', updateWarning);
+        }
+
+        function closeEditCustomerModal() {
+            const modal = document.getElementById('edit-customer-modal');
+            if (modal) {
+                modal.remove();
+            }
+        }
+
+        async function handleEditCustomerSubmit(customerId, event) {
+            const customer = currentData.find(c => c.id === customerId);
+            if (!customer) return;
+
+            const btn = document.getElementById('update-customer-btn');
+            btn.classList.add('loading');
+            btn.textContent = '⏳ Mengupdate...';
+
+            const formData = new FormData(event.target);
+            const updatedCustomer = {
+                ...customer,
+                nama: formData.get('nama'),
+                alamat: formData.get('alamat'),
+                no_hp: formData.get('no_hp'),
+                paket: formData.get('paket'),
+                harga: parseInt(formData.get('harga')),
+                updated_at: new Date().toISOString()
+            };
+
+            // Check if package or price changed
+            const packageChanged = customer.paket !== updatedCustomer.paket;
+            const priceChanged = customer.harga !== updatedCustomer.harga;
+
+            const result = await window.dataSdk.update(updatedCustomer);
+            
+            btn.classList.remove('loading');
+            btn.textContent = '💾 Update Data';
+
+            if (result.isOk) {
+                let message = 'Data pelanggan berhasil diupdate!';
+                if (packageChanged || priceChanged) {
+                    message += ' Jangan lupa informasikan perubahan kepada pelanggan.';
+                }
+                showToast(message);
+                closeEditCustomerModal();
+            } else {
+                showToast('Gagal mengupdate data pelanggan', 'error');
+            }
+        }
+
+        async function deleteCustomer(customerId) {
+            const customer = currentData.find(c => c.id === customerId);
+            if (!customer) return;
+
+            const result = await window.dataSdk.delete(customer);
+            if (result.isOk) {
+                showToast('Pelanggan berhasil dihapus!');
+            } else {
+                showToast('Gagal menghapus pelanggan', 'error');
+            }
+        }
+
+        // Billing Management
+        async function generateBilling() {
+            const monthInput = document.getElementById('billing-month');
+            if (!monthInput.value) {
+                showToast('Pilih bulan tagihan terlebih dahulu', 'error');
+                return;
+            }
+
+            const btn = document.getElementById('generate-billing-btn');
+            btn.classList.add('loading');
+            btn.textContent = '⏳ Generating...';
+
+            const selectedMonth = monthInput.value;
+            const customers = currentData.filter(c => !c.bulan_tagihan);
+
+            for (const customer of customers) {
+                const updatedCustomer = {
+                    ...customer,
+                    bulan_tagihan: selectedMonth,
+                    tanggal_tagihan: new Date().toISOString(),
+                    status_bayar: 'belum_bayar'
+                };
+                await window.dataSdk.update(updatedCustomer);
+            }
+
+            btn.classList.remove('loading');
+            btn.textContent = '📋 Generate Tagihan';
+            
+            showToast(`Tagihan untuk ${customers.length} pelanggan berhasil dibuat!`);
+        }
+
+        function sendWhatsApp(customer) {
+            const config = window.elementSdk ? window.elementSdk.config : defaultConfig;
+            const officeAddress = config.office_address || defaultConfig.office_address;
+            const whatsappPayment = config.whatsapp_payment || defaultConfig.whatsapp_payment;
+            const bankMandiri = config.bank_mandiri || defaultConfig.bank_mandiri;
+            const danaNumber = config.dana_number || defaultConfig.dana_number;
+            
+            const message = `Halo ${customer.nama},\n\nTagihan internet ${customer.paket} untuk bulan ${new Date(customer.bulan_tagihan).toLocaleDateString('id-ID', {month: 'long', year: 'numeric'})} sebesar ${formatCurrency(customer.harga)} sudah tersedia.\n\n💳 METODE PEMBAYARAN:\n\n1️⃣ TUNAI DI KANTOR\n📍 ${officeAddress}\n📱 WA: ${whatsappPayment}\n\n2️⃣ TRANSFER BANK MANDIRI\n🏦 ${bankMandiri}\n\n3️⃣ DANA\n💰 ${danaNumber}\n\nMohon segera lakukan pembayaran dan konfirmasi via WhatsApp.\n\nTerima kasih,\nBUMDes CMMS Cikahuripan`;
+            
+            const whatsappUrl = `https://wa.me/${customer.no_hp.replace(/^0/, '62')}?text=${encodeURIComponent(message)}`;
+            window.open(whatsappUrl, '_blank', 'noopener,noreferrer');
+        }
+
+        // Payment Management
+        function showPaymentForm(customerId) {
+            const customer = currentData.find(c => c.id === customerId);
+            if (!customer) return;
+
+            const modal = document.createElement('div');
+            modal.id = 'payment-modal';
+            modal.className = 'fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50';
+            modal.innerHTML = `
+                <div class="bg-white rounded-lg p-6 w-full max-w-md mx-4">
+                    <div class="flex justify-between items-center mb-4">
+                        <h3 class="text-lg font-semibold text-gray-900">Input Pembayaran</h3>
+                        <button onclick="closePaymentModal()" class="text-gray-400 hover:text-gray-600">
+                            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                            </svg>
+                        </button>
+                    </div>
+                    
+                    <div class="mb-4 p-3 bg-gray-50 rounded-lg">
+                        <div class="text-sm text-gray-600">
+                            <div><strong>Pelanggan:</strong> ${customer.nama}</div>
+                            <div><strong>Tagihan:</strong> ${formatCurrency(customer.harga)}</div>
+                            <div><strong>Bulan:</strong> ${new Date(customer.bulan_tagihan).toLocaleDateString('id-ID', {month: 'long', year: 'numeric'})}</div>
+                        </div>
+                    </div>
+
+                    <form id="payment-form" class="space-y-4">
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">Metode Pembayaran</label>
+                            <select id="payment-method" name="payment_method" required class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+                                <option value="">Pilih Metode Pembayaran</option>
+                                <option value="tunai">💵 Tunai di Kantor</option>
+                                <option value="bank_mandiri">🏦 Transfer Bank Mandiri</option>
+                                <option value="dana">💰 DANA</option>
+                                <option value="lainnya">📱 Lainnya</option>
+                            </select>
+                        </div>
+
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">Jumlah Pembayaran</label>
+                            <input type="number" id="payment-amount" name="payment_amount" value="${customer.harga}" min="0" required class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+                        </div>
+
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">Tanggal Pembayaran</label>
+                            <input type="date" id="payment-date" name="payment_date" value="${new Date().toISOString().split('T')[0]}" required class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+                        </div>
+
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">Keterangan (Opsional)</label>
+                            <textarea id="payment-notes" name="payment_notes" rows="2" placeholder="Catatan tambahan..." class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"></textarea>
+                        </div>
+
+                        <div class="flex space-x-3 pt-4">
+                            <button type="submit" id="save-payment-btn" class="flex-1 bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg font-medium transition-colors">
+                                💾 Simpan Pembayaran
+                            </button>
+                            <button type="button" onclick="closePaymentModal()" class="px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors">
+                                ✅ Selesai
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            `;
+
+            document.body.appendChild(modal);
+
+            // Handle form submission
+            document.getElementById('payment-form').addEventListener('submit', async (e) => {
+                e.preventDefault();
+                await handlePaymentSubmit(customerId, e);
+            });
+        }
+
+        function closePaymentModal() {
+            const modal = document.getElementById('payment-modal');
+            if (modal) {
+                modal.remove();
+            }
+        }
+
+        async function handlePaymentSubmit(customerId, event) {
+            const customer = currentData.find(c => c.id === customerId);
+            if (!customer) return;
+
+            const btn = document.getElementById('save-payment-btn');
+            btn.classList.add('loading');
+            btn.textContent = '⏳ Menyimpan...';
+
+            const formData = new FormData(event.target);
+            const paymentMethod = formData.get('payment_method');
+            const paymentAmount = parseInt(formData.get('payment_amount'));
+            const paymentDate = formData.get('payment_date');
+            const paymentNotes = formData.get('payment_notes');
+
+            // Get method name for display
+            const methodNames = {
+                'tunai': 'Tunai di Kantor',
+                'bank_mandiri': 'Transfer Bank Mandiri',
+                'dana': 'DANA',
+                'lainnya': 'Lainnya'
+            };
+
+            const updatedCustomer = {
+                ...customer,
+                status_bayar: 'sudah_bayar',
+                status_jaringan: 'aktif',
+                tanggal_bayar: new Date(paymentDate).toISOString(),
+                metode_pembayaran: paymentMethod,
+                metode_pembayaran_nama: methodNames[paymentMethod] || paymentMethod,
+                jumlah_bayar: paymentAmount,
+                catatan_pembayaran: paymentNotes || '',
+                updated_at: new Date().toISOString()
+            };
+
+            const result = await window.dataSdk.update(updatedCustomer);
+            
+            btn.classList.remove('loading');
+            btn.textContent = '💾 Simpan Pembayaran';
+
+            if (result.isOk) {
+                showToast(`Pembayaran ${customer.nama} berhasil dicatat! Jaringan diaktifkan.`);
+                closePaymentModal();
+            } else {
+                showToast('Gagal mencatat pembayaran', 'error');
+            }
+        }
+
+        async function markAsPaid(customerId) {
+            showPaymentForm(customerId);
+        }
+
+        // UI Updates - simplified to prevent excessive re-renders
+        function updateUI() {
+            try {
+                updateCustomersList();
+                updateBillingList();
+                updatePaymentsList();
+                updateReports();
+                updateStats();
+                updatePaymentGatewayInfo();
+            } catch (error) {
+                console.error('Error updating UI:', error);
+            }
+        }
+
+        function updateCustomersList() {
+            // Only update if we're on the customers module
+            if (currentModule !== 'customers') return;
+            
+            const container = document.getElementById('customers-list');
+            const customers = currentData.filter(c => c.nama);
+
+            if (customers.length === 0) {
+                container.innerHTML = `
+                    <div class="text-center py-8 text-gray-500">
+                        <div class="text-4xl mb-2">👥</div>
+                        <p>Belum ada pelanggan. Klik "Tambah Pelanggan" untuk memulai.</p>
+                    </div>
+                `;
+            } else {
+                container.innerHTML = customers.map(customer => `
+                    <div class="border border-gray-200 rounded-lg p-4 hover:shadow-md transition-shadow">
+                        <div class="flex justify-between items-start">
+                            <div class="flex-1">
+                                <div class="flex items-center space-x-3 mb-2">
+                                    <h3 class="text-lg font-semibold text-gray-900">${customer.nama}</h3>
+                                    <span class="px-2 py-1 text-xs rounded-full ${customer.status_jaringan === 'aktif' ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}">
+                                        ${customer.status_jaringan === 'aktif' ? '🟢 Aktif' : '🔴 Off'}
+                                    </span>
+                                </div>
+                                <div class="grid grid-cols-1 md:grid-cols-2 gap-2 text-sm text-gray-600">
+                                    <div>📍 ${customer.alamat}</div>
+                                    <div>📱 ${customer.no_hp}</div>
+                                    <div>📡 ${customer.paket}</div>
+                                    <div>💰 ${formatCurrency(customer.harga)}/bulan</div>
+                                </div>
+                            </div>
+                            <div class="flex space-x-2">
+                                <button onclick="editCustomer('${customer.id}')" class="text-blue-600 hover:text-blue-800 p-2 rounded-lg hover:bg-blue-50 transition-colors" title="Edit Pelanggan">
+                                    ✏️
+                                </button>
+                                <button onclick="deleteCustomer('${customer.id}')" class="text-red-600 hover:text-red-800 p-2 rounded-lg hover:bg-red-50 transition-colors" title="Hapus Pelanggan">
+                                    🗑️
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                `).join('');
+            }
+        }
+
+        function updateBillingList() {
+            // Only update if we're on the billing module
+            if (currentModule !== 'billing') return;
+            
+            const container = document.getElementById('billing-list');
+            const billedCustomers = currentData.filter(c => c.bulan_tagihan);
+
+            if (billedCustomers.length === 0) {
+                container.innerHTML = `
+                    <div class="text-center py-8 text-gray-500">
+                        <div class="text-4xl mb-2">💰</div>
+                        <p>Pilih bulan dan klik "Generate Tagihan" untuk membuat tagihan bulanan.</p>
+                    </div>
+                `;
+                return;
+            }
+
+            container.innerHTML = billedCustomers.map(customer => `
+                <div class="border border-gray-200 rounded-lg p-4 hover:shadow-md transition-shadow">
+                    <div class="flex justify-between items-center">
+                        <div class="flex-1">
+                            <div class="flex items-center space-x-3 mb-2">
+                                <h3 class="text-lg font-semibold text-gray-900">${customer.nama}</h3>
+                                <span class="px-2 py-1 text-xs rounded-full ${customer.status_bayar === 'sudah_bayar' ? 'bg-green-100 text-green-800' : 'bg-yellow-100 text-yellow-800'}">
+                                    ${customer.status_bayar === 'sudah_bayar' ? '✅ Lunas' : '⏳ Belum Bayar'}
+                                </span>
+                            </div>
+                            <div class="grid grid-cols-1 md:grid-cols-3 gap-2 text-sm text-gray-600 mb-2">
+                                <div>📅 ${new Date(customer.bulan_tagihan).toLocaleDateString('id-ID', {month: 'long', year: 'numeric'})}</div>
+                                <div>💰 ${formatCurrency(customer.harga)}</div>
+                                <div>📱 ${customer.no_hp}</div>
+                            </div>
+                            ${customer.status_bayar === 'sudah_bayar' && customer.metode_pembayaran ? `
+                                <div class="text-xs text-green-600 bg-green-50 p-2 rounded">
+                                    <div class="flex items-center justify-between">
+                                        <div class="flex items-center space-x-4">
+                                            <span>💳 ${customer.metode_pembayaran_nama || customer.metode_pembayaran}</span>
+                                            <span>📅 ${formatDate(customer.tanggal_bayar)}</span>
+                                            ${customer.jumlah_bayar ? `<span>💰 ${formatCurrency(customer.jumlah_bayar)}</span>` : ''}
+                                        </div>
+                                        <button onclick="printPaymentReceipt('${customer.id}')" class="bg-blue-600 hover:bg-blue-700 text-white px-2 py-1 rounded text-xs font-medium transition-colors">
+                                            🖨️ Cetak Bukti
+                                        </button>
+                                    </div>
+                                    ${customer.catatan_pembayaran ? `<div class="mt-1">📝 ${customer.catatan_pembayaran}</div>` : ''}
+                                </div>
+                            ` : ''}
+                        </div>
+                        <div class="flex space-x-2">
+                            ${customer.status_bayar === 'belum_bayar' ? `
+                                <button onclick="sendWhatsApp(${JSON.stringify(customer).replace(/"/g, '&quot;')})" class="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors">
+                                    📱 Kirim WA
+                                </button>
+                            ` : ''}
+                        </div>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        function updatePaymentsList() {
+            // Only update if we're on the payments module
+            if (currentModule !== 'payments') return;
+            
+            const container = document.getElementById('unpaid-bills');
+            const unpaidBills = currentData.filter(c => c.status_bayar === 'belum_bayar' && c.bulan_tagihan);
+
+            if (unpaidBills.length === 0) {
+                container.innerHTML = `
+                    <div class="text-center py-8 text-gray-500">
+                        <div class="text-4xl mb-2">💳</div>
+                        <p>Belum ada tagihan yang belum dibayar.</p>
+                    </div>
+                `;
+                return;
+            }
+
+            container.innerHTML = unpaidBills.map(customer => `
+                <div class="border border-gray-200 rounded-lg p-4 hover:shadow-md transition-shadow">
+                    <div class="flex justify-between items-center">
+                        <div class="flex-1">
+                            <div class="flex items-center space-x-3 mb-2">
+                                <h3 class="text-lg font-semibold text-gray-900">${customer.nama}</h3>
+                                <span class="px-2 py-1 text-xs rounded-full bg-red-100 text-red-800">
+                                    🔴 Jaringan ${customer.status_jaringan === 'aktif' ? 'Aktif' : 'Off'}
+                                </span>
+                            </div>
+                            <div class="grid grid-cols-1 md:grid-cols-3 gap-2 text-sm text-gray-600">
+                                <div>📅 ${new Date(customer.bulan_tagihan).toLocaleDateString('id-ID', {month: 'long', year: 'numeric'})}</div>
+                                <div>💰 ${formatCurrency(customer.harga)}</div>
+                                <div>📱 ${customer.no_hp}</div>
+                            </div>
+                        </div>
+                        <div class="flex space-x-2">
+                            <button onclick="markAsPaid('${customer.id}')" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors">
+                                ✅ Tandai Lunas
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        function updateReports() {
+            // Only update if we're on the reports module
+            if (currentModule !== 'reports') return;
+            
+            const paidBills = currentData.filter(c => c.status_bayar === 'sudah_bayar');
+            const totalRevenue = paidBills.reduce((sum, customer) => sum + (customer.jumlah_bayar || customer.harga || 0), 0);
+            
+            document.getElementById('total-revenue').textContent = formatCurrency(totalRevenue);
+            
+            // Update payment history
+            const paymentHistoryContainer = document.getElementById('payment-history');
+            
+            if (paidBills.length === 0) {
+                paymentHistoryContainer.innerHTML = `
+                    <div class="text-center py-8 text-gray-500">
+                        <div class="text-4xl mb-2">📊</div>
+                        <p>Data laporan akan muncul setelah ada transaksi pembayaran.</p>
+                    </div>
+                `;
+                return;
+            }
+
+            // Group by payment method
+            const paymentsByMethod = paidBills.reduce((acc, customer) => {
+                const method = customer.metode_pembayaran_nama || customer.metode_pembayaran || 'Tidak Diketahui';
+                if (!acc[method]) {
+                    acc[method] = { count: 0, total: 0, customers: [] };
+                }
+                acc[method].count++;
+                acc[method].total += (customer.jumlah_bayar || customer.harga || 0);
+                acc[method].customers.push(customer);
+                return acc;
+            }, {});
+
+            paymentHistoryContainer.innerHTML = `
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                    <!-- Payment Methods Summary -->
+                    <div class="bg-white border border-gray-200 rounded-lg p-4">
+                        <h4 class="font-semibold text-gray-900 mb-3">📊 Ringkasan per Metode Pembayaran</h4>
+                        <div class="space-y-3">
+                            ${Object.entries(paymentsByMethod).map(([method, data]) => `
+                                <div class="flex justify-between items-center p-3 bg-gray-50 rounded-lg">
+                                    <div>
+                                        <div class="font-medium text-gray-900">${method}</div>
+                                        <div class="text-sm text-gray-600">${data.count} transaksi</div>
+                                    </div>
+                                    <div class="text-right">
+                                        <div class="font-semibold text-green-600">${formatCurrency(data.total)}</div>
+                                    </div>
+                                </div>
+                            `).join('')}
+                        </div>
+                    </div>
+
+                    <!-- Recent Payments -->
+                    <div class="bg-white border border-gray-200 rounded-lg p-4">
+                        <h4 class="font-semibold text-gray-900 mb-3">💳 Pembayaran Terbaru</h4>
+                        <div class="space-y-2 max-h-64 overflow-y-auto">
+                            ${paidBills
+                                .sort((a, b) => new Date(b.tanggal_bayar || b.updated_at) - new Date(a.tanggal_bayar || a.updated_at))
+                                .slice(0, 10)
+                                .map(customer => `
+                                    <div class="flex justify-between items-center p-2 hover:bg-gray-50 rounded">
+                                        <div class="flex-1">
+                                            <div class="font-medium text-sm text-gray-900">${customer.nama}</div>
+                                            <div class="text-xs text-gray-500">
+                                                ${customer.metode_pembayaran_nama || customer.metode_pembayaran || 'Manual'} • 
+                                                ${customer.tanggal_bayar ? formatDate(customer.tanggal_bayar) : 'Tanggal tidak tersedia'}
+                                            </div>
+                                        </div>
+                                        <div class="text-sm font-semibold text-green-600">
+                                            ${formatCurrency(customer.jumlah_bayar || customer.harga)}
+                                        </div>
+                                    </div>
+                                `).join('')}
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Detailed Payment List -->
+                <div class="bg-white border border-gray-200 rounded-lg p-4 mt-6">
+                    <h4 class="font-semibold text-gray-900 mb-3">📋 Detail Semua Pembayaran</h4>
+                    <div class="overflow-x-auto">
+                        <table class="min-w-full text-sm">
+                            <thead class="bg-gray-50">
+                                <tr>
+                                    <th class="px-3 py-2 text-left font-medium text-gray-900">Pelanggan</th>
+                                    <th class="px-3 py-2 text-left font-medium text-gray-900">Bulan</th>
+                                    <th class="px-3 py-2 text-left font-medium text-gray-900">Metode</th>
+                                    <th class="px-3 py-2 text-left font-medium text-gray-900">Tanggal Bayar</th>
+                                    <th class="px-3 py-2 text-right font-medium text-gray-900">Jumlah</th>
+                                </tr>
+                            </thead>
+                            <tbody class="divide-y divide-gray-200">
+                                ${paidBills
+                                    .sort((a, b) => new Date(b.tanggal_bayar || b.updated_at) - new Date(a.tanggal_bayar || a.updated_at))
+                                    .map(customer => `
+                                        <tr class="hover:bg-gray-50">
+                                            <td class="px-3 py-2">
+                                                <div class="font-medium text-gray-900">${customer.nama}</div>
+                                                <div class="text-xs text-gray-500">${customer.no_hp}</div>
+                                            </td>
+                                            <td class="px-3 py-2 text-gray-600">
+                                                ${customer.bulan_tagihan ? new Date(customer.bulan_tagihan).toLocaleDateString('id-ID', {month: 'long', year: 'numeric'}) : '-'}
+                                            </td>
+                                            <td class="px-3 py-2">
+                                                <span class="px-2 py-1 text-xs bg-blue-100 text-blue-800 rounded-full">
+                                                    ${customer.metode_pembayaran_nama || customer.metode_pembayaran || 'Manual'}
+                                                </span>
+                                            </td>
+                                            <td class="px-3 py-2 text-gray-600">
+                                                ${customer.tanggal_bayar ? formatDate(customer.tanggal_bayar) : '-'}
+                                            </td>
+                                            <td class="px-3 py-2 text-right">
+                                                <div class="flex items-center justify-end space-x-2">
+                                                    <span class="font-semibold text-green-600">${formatCurrency(customer.jumlah_bayar || customer.harga)}</span>
+                                                    <button onclick="printPaymentReceipt('${customer.id}')" class="bg-blue-600 hover:bg-blue-700 text-white px-2 py-1 rounded text-xs font-medium transition-colors">
+                                                        🖨️
+                                                    </button>
+                                                </div>
+                                            </td>
+                                        </tr>
+                                    `).join('')}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            `;
+        }
+
+        function updateStats() {
+            const totalCustomers = currentData.filter(c => c.nama).length;
+            const activeCustomers = currentData.filter(c => c.status_jaringan === 'aktif').length;
+            const inactiveCustomers = currentData.filter(c => c.status_jaringan === 'off').length;
+
+            document.getElementById('total-customers').textContent = totalCustomers;
+            document.getElementById('active-customers').textContent = activeCustomers;
+            document.getElementById('inactive-customers').textContent = inactiveCustomers;
+        }
+
+        // Event Listeners
+        document.getElementById('customer-form').addEventListener('submit', handleCustomerSubmit);
+
+        // Set default month to current month
+        document.getElementById('billing-month').value = new Date().toISOString().slice(0, 7);
+
+        // Payment Gateway Functions
+        function contactOffice() {
+            const config = window.elementSdk ? window.elementSdk.config : defaultConfig;
+            const whatsappPayment = config.whatsapp_payment || defaultConfig.whatsapp_payment;
+            const message = `Halo, saya ingin menanyakan tentang pembayaran tagihan internet BUMDes CMMS Cikahuripan.`;
+            const whatsappUrl = `https://wa.me/${whatsappPayment.replace(/^0/, '62')}?text=${encodeURIComponent(message)}`;
+            window.open(whatsappUrl, '_blank', 'noopener,noreferrer');
+        }
+
+        function copyBankAccount() {
+            const config = window.elementSdk ? window.elementSdk.config : defaultConfig;
+            const bankMandiri = config.bank_mandiri || defaultConfig.bank_mandiri;
+            
+            if (navigator.clipboard) {
+                navigator.clipboard.writeText(bankMandiri).then(() => {
+                    showToast('Nomor rekening berhasil disalin!');
+                }).catch(() => {
+                    showToast('Gagal menyalin nomor rekening', 'error');
+                });
+            } else {
+                showToast('Nomor rekening: ' + bankMandiri);
+            }
+        }
+
+        function copyDanaNumber() {
+            const config = window.elementSdk ? window.elementSdk.config : defaultConfig;
+            const danaNumber = config.dana_number || defaultConfig.dana_number;
+            
+            if (navigator.clipboard) {
+                navigator.clipboard.writeText(danaNumber).then(() => {
+                    showToast('Nomor DANA berhasil disalin!');
+                }).catch(() => {
+                    showToast('Gagal menyalin nomor DANA', 'error');
+                });
+            } else {
+                showToast('Nomor DANA: ' + danaNumber);
+            }
+        }
+
+        function updatePaymentGatewayInfo() {
+            const config = window.elementSdk ? window.elementSdk.config : defaultConfig;
+            
+            const officeAddress = config.office_address || defaultConfig.office_address;
+            const whatsappPayment = config.whatsapp_payment || defaultConfig.whatsapp_payment;
+            const bankMandiri = config.bank_mandiri || defaultConfig.bank_mandiri;
+            const danaNumber = config.dana_number || defaultConfig.dana_number;
+
+            const officeAddressEl = document.getElementById('payment-office-address');
+            const whatsappEl = document.getElementById('payment-whatsapp');
+            const bankMandiriEl = document.getElementById('payment-bank-mandiri');
+            const danaNumberEl = document.getElementById('payment-dana-number');
+
+            if (officeAddressEl) officeAddressEl.textContent = officeAddress;
+            if (whatsappEl) whatsappEl.textContent = whatsappPayment;
+            if (bankMandiriEl) bankMandiriEl.textContent = bankMandiri;
+            if (danaNumberEl) danaNumberEl.textContent = danaNumber;
+        }
+
+        // Print Payment Receipt Function
+        function printPaymentReceipt(customerId) {
+            const customer = currentData.find(c => c.id === customerId);
+            if (!customer || customer.status_bayar !== 'sudah_bayar') {
+                showToast('Data pembayaran tidak ditemukan', 'error');
+                return;
+            }
+
+            const config = window.elementSdk ? window.elementSdk.config : defaultConfig;
+            const companyName = config.company_name || defaultConfig.company_name;
+            const officeAddress = config.office_address || defaultConfig.office_address;
+            const contactInfo = config.contact_info || defaultConfig.contact_info;
+
+            // Generate receipt number
+            const receiptNumber = `BKT-${new Date(customer.tanggal_bayar).getFullYear()}${String(new Date(customer.tanggal_bayar).getMonth() + 1).padStart(2, '0')}-${customer.id.slice(-6).toUpperCase()}`;
+
+            // Create print window content
+            const printContent = `
+                <!DOCTYPE html>
+                <html>
+                <head>
+                    <meta charset="UTF-8">
+                    <title>Bukti Pembayaran - ${customer.nama}</title>
+                    <style>
+                        body {
+                            font-family: Arial, sans-serif;
+                            margin: 0;
+                            padding: 20px;
+                            background: white;
+                            color: black;
+                            font-size: 14px;
+                            line-height: 1.4;
+                        }
+                        .receipt {
+                            max-width: 600px;
+                            margin: 0 auto;
+                            border: 2px solid #333;
+                            padding: 20px;
+                        }
+                        .header {
+                            text-align: center;
+                            border-bottom: 2px solid #333;
+                            padding-bottom: 15px;
+                            margin-bottom: 20px;
+                        }
+                        .company-name {
+                            font-size: 20px;
+                            font-weight: bold;
+                            margin-bottom: 5px;
+                        }
+                        .company-info {
+                            font-size: 12px;
+                            color: #666;
+                        }
+                        .receipt-title {
+                            font-size: 18px;
+                            font-weight: bold;
+                            text-align: center;
+                            margin: 20px 0;
+                            text-transform: uppercase;
+                        }
+                        .receipt-number {
+                            text-align: center;
+                            font-size: 12px;
+                            color: #666;
+                            margin-bottom: 20px;
+                        }
+                        .info-table {
+                            width: 100%;
+                            border-collapse: collapse;
+                            margin-bottom: 20px;
+                        }
+                        .info-table td {
+                            padding: 8px 0;
+                            border-bottom: 1px dotted #ccc;
+                        }
+                        .info-table .label {
+                            width: 40%;
+                            font-weight: bold;
+                        }
+                        .info-table .value {
+                            width: 60%;
+                        }
+                        .amount-section {
+                            background: #f5f5f5;
+                            padding: 15px;
+                            border: 1px solid #ddd;
+                            margin: 20px 0;
+                            text-align: center;
+                        }
+                        .amount-label {
+                            font-size: 14px;
+                            color: #666;
+                            margin-bottom: 5px;
+                        }
+                        .amount-value {
+                            font-size: 24px;
+                            font-weight: bold;
+                            color: #2563eb;
+                        }
+                        .footer {
+                            border-top: 2px solid #333;
+                            padding-top: 15px;
+                            margin-top: 30px;
+                            text-align: center;
+                            font-size: 12px;
+                            color: #666;
+                        }
+                        .signature-section {
+                            display: flex;
+                            justify-content: space-between;
+                            margin-top: 40px;
+                            padding-top: 20px;
+                        }
+                        .signature-box {
+                            text-align: center;
+                            width: 200px;
+                        }
+                        .signature-line {
+                            border-top: 1px solid #333;
+                            margin-top: 60px;
+                            padding-top: 5px;
+                        }
+                        .status-paid {
+                            background: #10b981;
+                            color: white;
+                            padding: 5px 15px;
+                            border-radius: 20px;
+                            font-size: 12px;
+                            font-weight: bold;
+                            display: inline-block;
+                            margin: 10px 0;
+                        }
+                        @media print {
+                            body { margin: 0; padding: 10px; }
+                            .receipt { border: 1px solid #333; }
+                            .no-print { display: none; }
+                        }
+                    </style>
+                </head>
+                <body>
+                    <div class="receipt">
+                        <!-- Header -->
+                        <div class="header">
+                            <div class="company-name">${companyName}</div>
+                            <div class="company-info">
+                                ${officeAddress}<br>
+                                Telp: ${contactInfo}
+                            </div>
+                        </div>
+
+                        <!-- Receipt Title -->
+                        <div class="receipt-title">Bukti Pembayaran Internet</div>
+                        <div class="receipt-number">No. Bukti: ${receiptNumber}</div>
+                        
+                        <div class="status-paid">✅ LUNAS</div>
+
+                        <!-- Customer & Payment Info -->
+                        <table class="info-table">
+                            <tr>
+                                <td class="label">Nama Pelanggan:</td>
+                                <td class="value">${customer.nama}</td>
+                            </tr>
+                            <tr>
+                                <td class="label">Alamat:</td>
+                                <td class="value">${customer.alamat}</td>
+                            </tr>
+                            <tr>
+                                <td class="label">No. HP:</td>
+                                <td class="value">${customer.no_hp}</td>
+                            </tr>
+                            <tr>
+                                <td class="label">Paket Internet:</td>
+                                <td class="value">${customer.paket}</td>
+                            </tr>
+                            <tr>
+                                <td class="label">Periode Tagihan:</td>
+                                <td class="value">${customer.bulan_tagihan ? new Date(customer.bulan_tagihan).toLocaleDateString('id-ID', {month: 'long', year: 'numeric'}) : '-'}</td>
+                            </tr>
+                            <tr>
+                                <td class="label">Tanggal Pembayaran:</td>
+                                <td class="value">${customer.tanggal_bayar ? formatDate(customer.tanggal_bayar) : '-'}</td>
+                            </tr>
+                            <tr>
+                                <td class="label">Metode Pembayaran:</td>
+                                <td class="value">${customer.metode_pembayaran_nama || customer.metode_pembayaran || 'Manual'}</td>
+                            </tr>
+                            ${customer.catatan_pembayaran ? `
+                            <tr>
+                                <td class="label">Keterangan:</td>
+                                <td class="value">${customer.catatan_pembayaran}</td>
+                            </tr>
+                            ` : ''}
+                        </table>
+
+                        <!-- Amount Section -->
+                        <div class="amount-section">
+                            <div class="amount-label">Total Pembayaran</div>
+                            <div class="amount-value">${formatCurrency(customer.jumlah_bayar || customer.harga)}</div>
+                        </div>
+
+                        <!-- Signature Section -->
+                        <div class="signature-section">
+                            <div class="signature-box">
+                                <div>Pelanggan</div>
+                                <div class="signature-line">${customer.nama}</div>
+                            </div>
+                            <div class="signature-box">
+                                <div>Petugas</div>
+                                <div class="signature-line">BUMDes CMMS</div>
+                            </div>
+                        </div>
+
+                        <!-- Footer -->
+                        <div class="footer">
+                            <p><strong>Terima kasih atas pembayaran Anda!</strong></p>
+                            <p>Bukti pembayaran ini adalah dokumen resmi. Simpan sebagai arsip.</p>
+                            <p>Dicetak pada: ${new Date().toLocaleDateString('id-ID', {
+                                weekday: 'long',
+                                year: 'numeric',
+                                month: 'long',
+                                day: 'numeric',
+                                hour: '2-digit',
+                                minute: '2-digit'
+                            })}</p>
+                        </div>
+
+                        <!-- Print Button (hidden when printing) -->
+                        <div class="no-print" style="text-align: center; margin-top: 20px;">
+                            <button onclick="window.print()" style="background: #2563eb; color: white; padding: 10px 20px; border: none; border-radius: 5px; font-size: 14px; cursor: pointer;">
+                                🖨️ Cetak Bukti Pembayaran
+                            </button>
+                            <button onclick="window.close()" style="background: #6b7280; color: white; padding: 10px 20px; border: none; border-radius: 5px; font-size: 14px; cursor: pointer; margin-left: 10px;">
+                                ❌ Tutup
+                            </button>
+                        </div>
+                    </div>
+                </body>
+                </html>
+            `;
+
+            // Open print window
+            const printWindow = window.open('', '_blank', 'width=800,height=900,scrollbars=yes');
+            if (printWindow) {
+                printWindow.document.write(printContent);
+                printWindow.document.close();
+                
+                // Auto focus and show print dialog after content loads
+                printWindow.onload = function() {
+                    printWindow.focus();
+                };
+                
+                showToast('Bukti pembayaran siap dicetak!');
+            } else {
+                showToast('Gagal membuka jendela cetak. Pastikan popup tidak diblokir.', 'error');
+            }
+        }
+
+        // Initialize app
+        initializeApp();
+    </script>
+ <script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'992a5bafc1fc62b7',t:'MTc2MTE1MDQwNS4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
+</html>
